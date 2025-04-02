@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>产品经理职场进化小游戏</title>
+  <style>
+    body {
+      font-family: "Microsoft YaHei", sans-serif;
+      padding: 20px;
+      background-color: #f0f2f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    h1, h3 {
+      text-align: center;
+    }
+    .score, .title {
+      text-align: center;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+    .story {
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .options button {
+      display: inline-block;
+      margin: 8px;
+      padding: 10px 15px;
+      cursor: pointer;
+      border: 1px solid #1890ff;
+      background-color: #fff;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+    .options button:hover {
+      background-color: #e6f7ff;
+    }
+    .result {
+      margin-top: 20px;
+      font-style: italic;
+      color: #555;
+      text-align: center;
+    }
+    .endgame {
+      text-align: center;
+      margin-top: 30px;
+      font-weight: bold;
+      font-size: 1.2em;
+      color: #c0392b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>产品经理职场进化小游戏</h1>
+    <div class="score">
+      当前进化分：<span id="score">50</span>
+    </div>
+    <div class="title">
+      当前称号：<span id="title">初出茅庐的小透明</span>
+    </div>
+    <div class="story" id="story"></div>
+    <div class="options" id="options"></div>
+    <div class="result" id="result"></div>
+    <div class="endgame" id="endgame" style="display: none;"></div>
+  </div>
+
+  <script>
+    /********************************************************
+     * 1. 剧情数据：章节内容、选项及分数变化
+     ********************************************************/
+    const chapters = [
+      {
+        id: 1,
+        title: "【第1章：初入战场】",
+        text: `
+          你叫沈之遥，28岁，作为一名产品经理刚入职一家互联网公司。公司内部竞争激烈，各种派系明争暗斗，大家都在为项目数据、用户增长和KPI拼命博弈。  
+          今天中午，在公司的公共区域（休息区旁边的自助咖啡机边），你正在简单整理自己手机上的数据报告，忽然听到部门主管王总走近，他语气平静却意味深长地问：  
+          “沈之遥，听说你跟小吴在同一项目组，她最近和隔壁产品部有点联动，你怎么看？说实话，咱们部门现在内部资源分配混乱，关键是看你能不能识局、顺势而为。”
+        `,
+        choices: [
+          {
+            id: "A",
+            text: "A. 直言：‘小吴这人工作不够扎实，靠应付了事，我觉得这种做法不靠谱。’",
+            score: -6,
+            outcome: "你直截了当地指出小吴的问题，但这种尖锐态度可能会得罪同事，也让王总觉得你过于激进。",
+            nextChapter: 2
+          },
+          {
+            id: "B",
+            text: "B. 谨慎回答：‘我觉得每个人都有各自的优势和不足，关键还是看整体团队的配合。’",
+            score: 10,
+            outcome: "你回答得模棱两可又理性，既没有得罪人，也体现出你的专业判断，王总暗自点头。",
+            nextChapter: 2
+          },
+          {
+            id: "C",
+            text: "C. 强调团队：‘小吴表现一直不错，团队协作才是最重要的，资源再混乱也得靠大家互补。’",
+            score: -2,
+            outcome: "你选择以团队为重，但显得没有个人主见，王总觉得你缺乏应对内部分歧的果断。",
+            nextChapter: 2
+          }
+        ]
+      },
+      {
+        id: 2,
+        title: "【第2章：项目内斗】",
+        text: `
+          进入第二天，你所在的产品项目组内部分为多个小圈子。部分成员主张以数据驱动推进产品迭代，另一些则更注重用户体验。  
+          在项目讨论会上，资深前辈秦思敏突然提出一个方案，她在微信工作群里发消息说：“我这边的方案已经定稿，就看沈经理能不能把数据跟上。”  
+          你知道，这其实是暗示派系斗争中对你的一种“试探”，让你证明自己是否能顺势而为，不被牵扯到内部矛盾中。
+        `,
+        choices: [
+          {
+            id: "A",
+            text: "A. 默默承担：‘好，我马上整理数据，再对方案做优化。’",
+            score: -4,
+            outcome: "你选择低调接盘，虽然没有正面冲突，但也显得缺乏主动性，容易被边缘化。",
+            nextChapter: 3
+          },
+          {
+            id: "B",
+            text: "B. 委婉澄清：‘其实定稿前我也没收到完整数据，可能需要各方多沟通协调。’",
+            score: 8,
+            outcome: "你既表达了自己的困难，也暗示团队协作问题，显示出你看清局势、懂得协调。",
+            nextChapter: 3
+          },
+          {
+            id: "C",
+            text: "C. 当场反击：‘数据问题明显，这方案根本行不通，我建议重新评估。’",
+            score: -8,
+            outcome: "你态度激烈，直接反击，虽然有理，但容易引发更大争端，给自己添堵。",
+            nextChapter: 3
+          }
+        ]
+      },
+      {
+        id: 3,
+        title: "【第3章：饭局风云】",
+        text: `
+          下班后，公司组织了一个小范围的饭局，参与人员除了你们产品组，还有隔壁产品部的负责人林总。  
+          在饭桌上，大家表面上谈笑风生，实际上每句话都带着试探。林总不经意间问道：“听说你最近在跟王总那边接触较多，是不是打算留在现在的团队？”  
+          王总随即打圆场：“沈之遥眼光不错，项目数据一直稳定。你怎么看？”  
+          你知道，这种场合就是让你表明立场，既要维护自己在王总派系的地位，也不能得罪有实力的竞争对手。
+        `,
+        choices: [
+          {
+            id: "A",
+            text: "A. 直接表态：‘我当然跟着王总，咱们部门现在资源整合正紧，我看前景更好。’",
+            score: 5,
+            outcome: "你果断表态站队王总，短期赢得了上司的认可，但林总可能会对你产生保留。",
+            nextChapter: 4
+          },
+          {
+            id: "B",
+            text: "B. 含蓄回答：‘我觉得现在最重要的是把项目做好，至于未来怎么走，还得看整体情况。’",
+            score: 10,
+            outcome: "你回答得既不偏颇又显得成熟稳重，既维护了王总的面子，也让林总觉得你低调务实。",
+            nextChapter: 4
+          },
+          {
+            id: "C",
+            text: "C. 回避问题：‘目前我只关注手头项目，其他就随缘吧。’",
+            score: -3,
+            outcome: "你回避了明确立场，显得态度模糊，可能会被各方质疑你是否真正有担当。",
+            nextChapter: 4
+          }
+        ]
+      },
+      {
+        id: 4,
+        title: "【第4章：抉择时刻】",
+        text: `
+          项目进入关键阶段，公司即将迎来季度考核。各路势力都在蠢蠢欲动，王总和林总各有打算。  
+          此时，你收到两边的邀请：一方面，王总希望你能留在现部门，带领团队冲刺业绩；另一方面，林总私下拉你谈话，暗示给你更大平台和资源。  
+          作为一名产品经理，你深知职场中识局、顺势而为的重要性。你必须做出选择，决定未来的方向。
+        `,
+        choices: [
+          {
+            id: "A",
+            text: "A. 留在现部门：‘我相信在王总带领下，我们能通过内部整合逆势上扬。’",
+            score: 5,
+            outcome: "你选择扎根现部门，表明忠诚与稳定，适合保守型上司，但也可能错过更大机会。",
+            nextChapter: 5
+          },
+          {
+            id: "B",
+            text: "B. 跳槽加盟：‘我认为换个平台，接触不同资源，能让我有更大发展。’",
+            score: 10,
+            outcome: "你决定抓住机会，换个环境迎接挑战，这需要一定的胆识和风险承担能力。",
+            nextChapter: 5
+          },
+          {
+            id: "C",
+            text: "C. 观望不定：‘目前各方都有各自的说法，我先做好手头项目再说。’",
+            score: -2,
+            outcome: "你选择暂时不做决定，虽然稳妥，但也可能失去关键时机，让别人占了先机。",
+            nextChapter: 5
+          }
+        ]
+      },
+      {
+        id: 5,
+        title: "【终章：职场真相】",
+        text: `
+          考核结果出炉，整个项目历经波折，你的选择决定了你在职场中的走向。  
+          无论你是扎根现有团队，还是跨出舒适圈加入新平台，这段经历都让你学会了如何在混乱的职场中识局、顺势而为。  
+          你的进化分和称号，将成为你未来发展的见证。
+        `,
+        choices: []
+      }
+    ];
+
+    /********************************************************
+     * 2. 游戏状态：分数、当前章节、称号
+     ********************************************************/
+    let currentScore = 50;
+    let currentChapterId = 1;
+
+    // 根据分数获取对应称号
+    function getTitleByScore(score) {
+      if (score < 0) {
+        return "职场迷途者";
+      } else if (score < 40) {
+        return "初出茅庐的小透明";
+      } else if (score < 60) {
+        return "稳健的执行者";
+      } else if (score < 80) {
+        return "精明的中坚";
+      } else if (score < 100) {
+        return "敢于突破的能人";
+      } else {
+        return "职场王者";
+      }
+    }
+
+    /********************************************************
+     * 3. 载入章节函数
+     ********************************************************/
+    function loadChapter(chapterId) {
+      const chapter = chapters.find(ch => ch.id === chapterId);
+      if (!chapter) {
+        endGame("未找到章节，请重试。");
+        return;
+      }
+      currentChapterId = chapterId;
+      const storyEl = document.getElementById('story');
+      storyEl.innerHTML = `<h3>${chapter.title}</h3><p>${chapter.text}</p>`;
+      document.getElementById('result').innerHTML = "";
+      const optionsEl = document.getElementById('options');
+      if (chapter.choices.length === 0) {
+        optionsEl.innerHTML = "";
+        endGame("游戏结束！感谢游玩，你的最终进化形态：" + getTitleByScore(currentScore));
+        return;
+      }
+      let buttonsHtml = "";
+      chapter.choices.forEach(choice => {
+        buttonsHtml += `<button data-choice-id="${choice.id}">${choice.text}</button>`;
+      });
+      optionsEl.innerHTML = buttonsHtml;
+    }
+
+    /********************************************************
+     * 4. 更新分数和称号
+     ********************************************************/
+    function updateScore(delta) {
+      currentScore += delta;
+      document.getElementById('score').textContent = currentScore;
+      document.getElementById('title').textContent = getTitleByScore(currentScore);
+    }
+
+    /********************************************************
+     * 5. 结束游戏函数
+     ********************************************************/
+    function endGame(message) {
+      const endgameEl = document.getElementById('endgame');
+      endgameEl.style.display = 'block';
+      endgameEl.textContent = message;
+    }
+
+    /********************************************************
+     * 6. 初始化：加载第一章
+     ********************************************************/
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('title').textContent = getTitleByScore(currentScore);
+      loadChapter(currentChapterId);
+    });
+
+    /********************************************************
+     * 7. 监听用户选择事件
+     ********************************************************/
+    document.getElementById('options').addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') {
+        const chapter = chapters.find(ch => ch.id === currentChapterId);
+        if (!chapter) return;
+        const choiceId = e.target.getAttribute('data-choice-id');
+        const choiceData = chapter.choices.find(c => c.id === choiceId);
+        if (!choiceData) return;
+        updateScore(choiceData.score);
+        document.getElementById('result').innerHTML = `<p>【结果】${choiceData.outcome}</p>`;
+        loadChapter(choiceData.nextChapter);
+      }
+    });
+  </script>
+</body>
+</html>
